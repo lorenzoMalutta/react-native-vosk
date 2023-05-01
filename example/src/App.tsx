@@ -2,14 +2,28 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 import { StyleSheet, View, Text, Button } from 'react-native';
 import Vosk from 'react-native-vosk';
+import RNFS from 'react-native-fs';
 
 export default function App(): JSX.Element {
     const [ready, setReady] = useState<Boolean>(false);
     const [recognizing, setRecognizing] = useState<Boolean>(false);
     const [result, setResult] = useState<String | undefined>();
-    // const [grammar, setGrammar] = useState<String[] | undefined>();
     const vosk = useRef(new Vosk()).current;
+    const [fileContent, setFileContent] = useState<string[]>();
 
+
+    useEffect(() => {
+        // Caminho do arquivo a ser lido
+        const filePath = RNFS.DocumentDirectoryPath + '../words.txt';
+
+        RNFS.readFile(filePath, 'utf8')
+            .then((content) => {
+                setFileContent(content.split('\n').map(String));
+            })
+            .catch((error) => {
+                console.log(error);
+            });
+    }, []);
 
     const load = useCallback(() => {
         vosk
@@ -36,29 +50,12 @@ export default function App(): JSX.Element {
         };
     }, [vosk]);
 
-    // const fs = require('fs');
-    // const file = fs.readFileSync('../src/words.txt', 'utf8').split('\n');
-
-    // RNFS.readFile(words, 'utf8')
-    //     .then(contents => {
-    //         console.log(contents);
-    //         const text = contents.split('\n');
-    //         setGrammar(text);
-    //     })
-    //     .catch(error => {
-    //         console.log(error.message);
-    //     });
-
-    const grammar = ['esquerda', 'direita', '[unk]', 'cima', 'baixo', 'frente', 'trás', 'cadastrar', 'excluir', 'editar', 'salvar', 'cancelar', 'voltar', 'sim', 'não', 'iniciar', 'parar', 'pausar', 'continuar'];
-    // const grammar = ['gauche', 'droite', '[unk]'];
-    // const grammar = ['left', 'right', '[unk]'];
-
     const record = () => {
         if (!ready) return;
         console.log('Starting recognition...');
         setRecognizing(true);
         vosk
-            .start(grammar)
+            .start(fileContent)
             .then((res: string) => {
                 console.log('Result is: ' + res);
                 setResult(res);
